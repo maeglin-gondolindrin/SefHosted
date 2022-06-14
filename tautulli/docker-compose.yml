@@ -1,0 +1,39 @@
+---
+version: "2.1"
+services:
+        tautulli:
+                image: linuxserver/tautulli
+                container_name: tautulli
+                environment:
+                        - PUID=1000
+                        - PGID=1000
+                        - TZ=Pacific/Sydney
+                # Traefik network, comment if not using
+                networks:
+                        - proxy
+                volumes:
+                        - ./tautulli/config:/config
+                # Uncomment if not using Traefik
+                #ports:
+                #        - 8181:8181
+                restart: unless-stopped
+                # Traefik labels and networks, comment if not using
+                labels:
+                        - "traefik.enable=true"
+                        - "traefik.http.routers.tautulli.entrypoints=http"
+                        - "traefik.http.routers.tautulli.rule=Host(`example.yourdomain.com`)"
+                        - "traefik.http.middlewares.tautulli-https-redirect.redirectscheme.scheme=https"
+                        - "traefik.http.routers.tautulli.middlewares=tautulli-https-redirect"
+                        - "traefik.http.routers.tautulli-secure.entrypoints=https"
+                        - "traefik.http.routers.tautulli-secure.rule=Host(`example.yourdomain.com`)"
+                        - "traefik.http.routers.tautulli-secure.tls=true"
+                        - "traefik.http.routers.tautulli-secure.service=tautulli"
+                        - "traefik.http.services.tautulli.loadbalancer.server.port=8181"
+                        - "traefik.docker.network=proxy"
+                # Uncomment if you have authelia configured
+                #        - "traefik.http.routers.tautulli-secure.middlewares=authelia@docker"
+
+networks:
+  proxy:
+    external: true
+...

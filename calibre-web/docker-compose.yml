@@ -1,0 +1,44 @@
+
+---
+version: "2.1"
+services:
+        calibre-web:
+                image: lscr.io/linuxserver/calibre-web
+                container_name: calibre-web
+                environment:
+                        - PUID=1000
+                        - PGID=1000
+                        - TZ=Pacific/Sydney
+                volumes:
+                        - <path/to/your/config>:/config
+                        - <path/to/your/calibre/library>:/books
+
+# treafik network comment if you don't have traefik configured
+                networks:
+                        - proxy
+                #ports:
+                #        - 8087:8083 if you don't use traefik just uncomment the ports lines
+
+# Traefik labels.
+                restart: unless-stopped
+                labels:
+                        - "traefik.enable=true"
+                        - "traefik.http.routers.calibre-web.entrypoints=http"
+                        - "traefik.http.routers.calibre-web.rule=Host(`whatever.yourdomain.com`)"
+                        - "traefik.http.middlewares.calibre-web-https-redirect.redirectscheme.scheme=https"
+                        - "traefik.http.routers.calibre-web.middlewares=calibre-web-https-redirect"
+                        - "traefik.http.routers.calibre-web-secure.entrypoints=https"
+                        - "traefik.http.routers.calibre-web-secure.rule=Host(`whatever.yourdomain.com`)"
+                        - "traefik.http.routers.calibre-web-secure.tls=true"
+                        - "traefik.http.routers.calibre-web-secure.service=calibre-web"
+                        - "traefik.http.services.calibre-web.loadbalancer.server.port=8083"
+                        - "traefik.docker.network=proxy"
+                        # uncomment if you have authelia set up
+                #        - "traefik.http.routers.calibre-web-secure.middlewares=authelia@docker"
+
+# Traefik network comment if you don't have traefik configured                
+networks:
+  proxy:
+    external: true
+...
+

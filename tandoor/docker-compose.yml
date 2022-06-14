@@ -1,0 +1,68 @@
+version: "3"
+services:
+  db_recipes:
+    restart: always
+    image: postgres:11-alpine
+    volumes:
+      - ./postgresql:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+    networks:
+      - default
+      - proxy # traefik network comment if not using
+
+  web_recipes:
+    restart: always
+    image: vabene1111/recipes
+    env_file:
+      - ./.env
+    volumes:
+      - staticfiles:/opt/recipes/staticfiles
+      - nginx_config:/opt/recipes/nginx/conf.d
+      - ./tandoor/mediafiles:/opt/recipes/mediafiles
+    depends_on:
+      - db_recipes
+    networks:
+      - default
+      - proxy # traefik network comment if not using
+
+  nginx_recipes:
+    image: nginx:mainline-alpine
+    restart: always
+    env_file:
+      - ./.env
+    # Uncomment if not using Traefik
+    #ports:
+    #  - 80:80
+    volumes:
+      - nginx_config:/etc/nginx/conf.d:ro
+      - staticfiles:/static:ro
+      - ./tandoor/mediafiles:/media:ro
+    # Traefik labels, comment if not using
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tandoor.entrypoints=http"
+      - "traefik.http.routers.tandoor.rule=Host(`example.yourdomain.com`)"
+      - "traefik.http.middlewares.tandoor-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.tandoor.middlewares=tandoor-https-redirect"
+      - "traefik.http.routers.tandoor-secure.entrypoints=https"
+      - "traefik.http.routers.tandoor-secure.rule=Host(`example.yourdomain.com`)"
+      - "traefik.http.routers.tandoor-secure.tls=true"
+      - "traefik.http.routers.tandoor-secure.service=tandoor"
+      - "traefik.http.services.tandoor.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+    depends_on:
+      - web_recipes
+    networks:
+      - default
+      - proxy # traefik network, comment if not using
+
+networks:
+  default:
+  proxy: # This is your external traefik network
+    external: true
+
+volumes:
+  nginx_config:
+  staticfiles:

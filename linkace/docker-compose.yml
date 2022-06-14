@@ -1,0 +1,61 @@
+version: "3"
+
+services:
+
+  # --- MariaDB
+  db:
+    image: mariadb:10.5
+    restart: unless-stopped
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_bin
+    networks:
+      - linkace
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+    volumes:
+      - db2:/var/lib/mysql
+
+  # --- LinkAce Image with PHP 7.4 and nginx
+  app:
+    image: linkace/linkace:simple
+    restart: unless-stopped
+    networks:
+      - linkace
+      - proxy # Treafik network comment if useless
+    depends_on:
+      - db
+    
+    # uncomment if Treafik not configured
+    #ports:
+    #  - 80:80
+    volumes:
+      - ./linkace/.env:/app/.env
+      - linkace_logs:/app/storage/logs
+# Traefik Labels, comment if traefik not configured    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.linkace.entrypoints=http"
+      - "traefik.http.routers.linkace.rule=Host(`example.yourdomain.com`)"
+      - "traefik.http.middlewares.linkace-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.linkace.middlewares=linkace-https-redirect"
+      - "traefik.http.routers.linkace-secure.entrypoints=https"
+      - "traefik.http.routers.linkace-secure.rule=Host(`example.yourdomain.com`)"
+      - "traefik.http.routers.linkace-secure.tls=true"
+      - "traefik.http.routers.linkace-secure.service=linkace"
+      - "traefik.http.services.linkace.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+      # Uncomment if authelia's configured
+      #- "traefik.http.routers.linkace-secure.middlewares=authelia@docker"
+
+
+volumes:
+  linkace_logs:
+  db2:
+    driver: local
+
+networks:
+  proxy: # treafik network
+    external: true
+  linkace:

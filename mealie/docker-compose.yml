@@ -1,0 +1,51 @@
+---
+version: "3.1"
+services:
+  mealie:
+    container_name: mealie
+    image: hkotel/mealie:latest
+    restart: always
+    # Traefik network, comment if not using
+    networks:
+      - proxy
+  #  ports:
+  #    - 9925:80
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Pacific/Sydney
+
+      # Default Recipe Settings
+      RECIPE_PUBLIC: 'true'
+      RECIPE_SHOW_NUTRITION: 'true'
+      RECIPE_SHOW_ASSETS: 'true'
+      RECIPE_LANDSCAPE_VIEW: 'true'
+      RECIPE_DISABLE_COMMENTS: 'false'
+      RECIPE_DISABLE_AMOUNT: 'false'
+
+      # Gunicorn
+      # WEB_CONCURRENCY: 2
+      # WORKERS_PER_CORE: 0.5
+      # MAX_WORKERS: 8
+    volumes:
+      - ./mealie/mealie/data/:/app/data
+
+# Traefik labels and network, comment is not using  
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.mealie.entrypoints=http"
+        - "traefik.http.routers.mealie.rule=Host(`example.yourdomain.com`)"
+        - "traefik.http.middlewares.mealie-https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.routers.mealie.middlewares=mealie-https-redirect"
+        - "traefik.http.routers.mealie-secure.entrypoints=https"
+        - "traefik.http.routers.mealie-secure.rule=Host(`example.yourdomain.com`)"
+        - "traefik.http.routers.mealie-secure.tls=true"
+        - "traefik.http.routers.mealie-secure.service=mealie"
+        - "traefik.http.services.mealie.loadbalancer.server.port=80"
+        - "traefik.docker.network=proxy"
+        # Uncomment if using authelia
+        #- "traefik.http.routers.mealie-secure.middlewares=authelia@docker"
+
+networks:
+  proxy:
+    external: true
