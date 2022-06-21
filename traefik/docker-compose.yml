@@ -13,10 +13,8 @@ services:
       - 80:80
       - 443:443
     environment:
-      - CF_API_EMAIL=<your cloudflare email>
-      - CF_DNS_API_TOKEN=<your cloudflare API TOKEN>
-      # - NAMECHEAP_API_USER=<your namecheap username>
-      # - NAMECHEAP_API_KEY=<your neamecheap API KEY>
+      - CF_API_EMAIL=<your-cloudflare-email>
+      - CF_DNS_API_TOKEN=<cloudflare API-TOKEN>
       # - CF_API_KEY=YOU_API_KEY
       # be sure to use the correct one depending on if you are using a token or key
     volumes:
@@ -29,18 +27,20 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
-      - "traefik.http.routers.traefik.rule=Host(`example.yourdomain.com`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.yourdomain.com`)"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=melkor:$$apr1$$9UjxLFXK$$6QEF/gabXueM6HlKqym6w."
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`example.yourdomain.com`)"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.yourdomain.com`)"
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.routers.traefik-secure.tls=true"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare" # change depending on your certresolver
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
       - "traefik.http.routers.traefik-secure.tls.domains[0].main=yourdomain.com"
       - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.yourdomain.com"
+      - "traefik.http.routers.traefik-secure.tls.domains[1].main=yourseconddomain.com"
+      - "traefik.http.routers.traefik-secure.tls.domains[1].sans=*.yourseconddomain.com"
       - "traefik.http.routers.traefik-secure.service=api@internal"
 
 networks:
